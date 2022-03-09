@@ -6,16 +6,18 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/blake2s"
 	"hash/adler32"
 	"hash/crc32"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
+
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/blake2s"
 )
 
 var (
@@ -65,7 +67,13 @@ func checksum(r io.Reader, method string) (string, error) {
 }
 
 func writeChecksums(files, methods []string) ([]string, error) {
-	checksums := make(map[string][]string)
+
+	filename := filepath.Base(files[0]) + ".DIGEST"
+	f, err := os.Create(filename)
+
+	if err != nil {
+		return nil, err
+	}
 
 	for _, method := range methods {
 		for _, file := range files {
@@ -81,29 +89,14 @@ func writeChecksums(files, methods []string) ([]string, error) {
 				return nil, err
 			}
 
-			checksums[method] = append(checksums[method], hash, file)
-		}
-	}
-
-	for method, results := range checksums {
-		filename := method + "sum.txt"
-		f, err := os.Create(filename)
-
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < len(results); i += 2 {
-			hash := results[i]
-			file := results[i+1]
-
+			f.WriteString(fmt.Sprintf("# %s HASH\n", strings.ToUpper(method)))
 			if _, err := f.WriteString(fmt.Sprintf("%s  %s\n", hash, file)); err != nil {
 				return nil, err
 			}
 		}
-
-		files = append(files, filename)
 	}
+
+	files = append(files, filename)
 
 	return files, nil
 }
