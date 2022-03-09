@@ -76,6 +76,7 @@ func writeChecksums(files, methods []string) ([]string, error) {
 	}
 
 	for _, method := range methods {
+		f.WriteString(fmt.Sprintf("# %s HASH\n", strings.ToUpper(method)))
 		for _, file := range files {
 			handle, err := os.Open(file)
 
@@ -89,7 +90,6 @@ func writeChecksums(files, methods []string) ([]string, error) {
 				return nil, err
 			}
 
-			f.WriteString(fmt.Sprintf("# %s HASH\n", strings.ToUpper(method)))
 			if _, err := f.WriteString(fmt.Sprintf("%s  %s\n", hash, file)); err != nil {
 				return nil, err
 			}
