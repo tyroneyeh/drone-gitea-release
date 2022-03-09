@@ -2,9 +2,10 @@ package main
 
 import (
 	"os"
+	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -106,10 +107,6 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	if c.String("env-file") != "" {
-		_ = godotenv.Load(c.String("env-file"))
-	}
-
 	plugin := Plugin{
 		Repo: Repo{
 			Owner: c.String("repo.owner"),
@@ -133,6 +130,35 @@ func run(c *cli.Context) error {
 			Title:      c.String("title"),
 			Note:       c.String("note"),
 		},
+	}
+
+	if c.String("env-file") != "" {
+		_ = godotenv.Load(c.String("env-file"))
+		if os.Getenv("DRONE_BUILD_EVENT") != "" {
+			plugin.Build.Event = os.Getenv("DRONE_BUILD_EVENT")
+		}
+		if os.Getenv("PLUGIN_API_KEY") != "" {
+			plugin.Config.APIKey = os.Getenv("PLUGIN_API_KEY")
+		}
+		if os.Getenv("PLUGIN_BASE_URL") != "" {
+			plugin.Config.BaseURL = os.Getenv("PLUGIN_BASE_URL")
+		}
+		if os.Getenv("DRONE_REPO_OWNER") != "" {
+			plugin.Repo.Owner = os.Getenv("DRONE_REPO_OWNER")
+		}
+		if os.Getenv("DRONE_REPO_NAME") != "" {
+			plugin.Repo.Name = os.Getenv("DRONE_REPO_NAME")
+		}
+		if os.Getenv("PLUGIN_PRERELEASE") != "" {
+			plugin.Config.PreRelease = true
+		}
+		if os.Getenv("PLUGIN_INSECURE") != "" {
+			plugin.Config.Insecure = true
+		}
+		if os.Getenv("PLUGIN_CHECKSUM") != "" {
+			plugin.Config.Checksum = strings.Split(os.Getenv("PLUGIN_CHECKSUM"), " ")
+		}
+
 	}
 
 	return plugin.Exec()
